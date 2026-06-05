@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 
 <style>
-
 *{
 margin:0;
 padding:0;
@@ -19,39 +18,53 @@ font-family:'Jua',sans-serif;
 
 body{
 overflow:hidden;
-background:linear-gradient(#87CEEB,#CFF4FF);
 height:100vh;
+background:linear-gradient(#87CEEB,#DFF8FF);
+}
+
+.cloud{
+position:absolute;
+font-size:80px;
+animation:float 20s linear infinite;
+}
+
+.cloud:nth-child(1){top:50px;left:-200px;}
+.cloud:nth-child(2){top:180px;left:-400px;animation-duration:30s;}
+.cloud:nth-child(3){top:320px;left:-300px;animation-duration:25s;}
+
+@keyframes float{
+from{transform:translateX(0);}
+to{transform:translateX(2200px);}
 }
 
 .screen{
+height:100vh;
 display:flex;
 flex-direction:column;
-align-items:center;
 justify-content:center;
-height:100vh;
+align-items:center;
 }
 
 h1{
-font-size:60px;
-color:#ff7f50;
+font-size:70px;
+color:#ff6f3c;
 margin-bottom:20px;
 }
 
 .subtitle{
-font-size:28px;
+font-size:32px;
 margin-bottom:40px;
 }
 
 .btn{
-width:320px;
+width:340px;
 height:100px;
 border:none;
 border-radius:30px;
-font-size:34px;
-margin:15px;
+font-size:36px;
 cursor:pointer;
 background:#FFD93D;
-box-shadow:0 8px 0 #d6b300;
+box-shadow:0 8px 0 #d8b300;
 }
 
 .btn:hover{
@@ -60,26 +73,30 @@ transform:scale(1.05);
 
 .vegetables{
 display:grid;
-grid-template-columns:repeat(2,250px);
-gap:20px;
+grid-template-columns:repeat(2,260px);
+gap:25px;
 }
 
 .veg{
 background:white;
 border-radius:30px;
-padding:30px;
-font-size:40px;
+padding:25px;
+font-size:42px;
 cursor:pointer;
-box-shadow:0 5px 20px rgba(0,0,0,0.2);
 text-align:center;
+box-shadow:0 5px 20px rgba(0,0,0,.2);
+transition:.2s;
 }
 
-.game-area{
+.veg:hover{
+transform:scale(1.08);
+}
+
+#game{
 display:none;
 position:relative;
 width:100vw;
 height:100vh;
-overflow:hidden;
 }
 
 #vegetable{
@@ -88,7 +105,7 @@ left:50%;
 top:50%;
 transform:translate(-50%,-50%);
 font-size:120px;
-transition:0.1s;
+transition:.2s;
 }
 
 #warning{
@@ -96,50 +113,68 @@ position:absolute;
 top:40px;
 left:50%;
 transform:translateX(-50%);
-font-size:48px;
+font-size:50px;
 color:red;
-display:none;
-}
-
-#explosion{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-font-size:80px;
 display:none;
 text-align:center;
 }
 
-#growButton{
+#explosion{
+position:absolute;
+inset:0;
+display:none;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+background:rgba(255,255,255,.85);
+font-size:70px;
+text-align:center;
+}
+
+#growBtn{
 position:absolute;
 bottom:40px;
 left:50%;
 transform:translateX(-50%);
-width:400px;
+width:420px;
 height:120px;
-font-size:40px;
+font-size:42px;
 border:none;
 border-radius:30px;
 background:#4CAF50;
 color:white;
 }
 
+.shake{
+animation:shake .3s 5;
+}
+
+@keyframes shake{
+0%{transform:translate(0);}
+25%{transform:translate(8px);}
+50%{transform:translate(-8px);}
+75%{transform:translate(8px);}
+100%{transform:translate(0);}
+}
 </style>
 </head>
 
 <body>
 
+<div class="cloud">☁️</div>
+<div class="cloud">☁️</div>
+<div class="cloud">☁️</div>
+
 <div id="home" class="screen">
 
-<h1>🥔 채소 폭탄 넘기기 🥬</h1>
+<h1>🍠 채소 폭탄 넘기기 🍄</h1>
 
 <div class="subtitle">
-손으로 채소를 크게 키워보세요!
+채소를 크게 키워보세요!
 </div>
 
-<button class="btn" onclick="showVegetables()">
-혼자 하기
+<button class="btn" onclick="showSelect()">
+게임 시작
 </button>
 
 </div>
@@ -150,8 +185,8 @@ color:white;
 
 <div class="vegetables">
 
-<div class="veg" onclick="startGame('🥔')">
-🥔<br>고구마
+<div class="veg" onclick="startGame('🍠')">
+🍠<br>고구마
 </div>
 
 <div class="veg" onclick="startGame('🍅')">
@@ -174,26 +209,28 @@ color:white;
 
 </div>
 
-<div class="game-area" id="game">
+<div id="game">
 
 <div id="warning">
 ⚠ 위험해요!<br>
 채소가 너무 커졌어요!
 </div>
 
-<div id="vegetable">
-🥔
-</div>
+<div id="vegetable">🍠</div>
 
 <div id="explosion">
-💥 채소가 터졌어요!<br><br>
+💥 채소가 터졌어요!
+
+<br><br>
+
 <button class="btn" onclick="location.reload()">
 다시하기
 </button>
+
 </div>
 
-<button id="growButton" onclick="growVegetable()">
-채소 키우기
+<button id="growBtn" onclick="growVegetable()">
+💪 채소 키우기!
 </button>
 
 </div>
@@ -202,45 +239,47 @@ color:white;
 
 let size=120;
 
-function showVegetables(){
-document.getElementById("home").style.display="none";
-document.getElementById("select").style.display="flex";
+function showSelect(){
+home.style.display="none";
+select.style.display="flex";
 }
 
 function startGame(icon){
 
-document.getElementById("select").style.display="none";
-document.getElementById("game").style.display="block";
+select.style.display="none";
+game.style.display="block";
 
-const veg=document.getElementById("vegetable");
-
-veg.innerHTML=icon;
+vegetable.innerHTML=icon;
 
 size=120;
-veg.style.fontSize=size+"px";
+vegetable.style.fontSize=size+"px";
+
+warning.style.display="none";
+explosion.style.display="none";
+growBtn.style.display="block";
+vegetable.style.display="block";
 }
 
 function growVegetable(){
 
-size+=20;
+size+=25;
 
-const veg=document.getElementById("vegetable");
+vegetable.style.fontSize=size+"px";
 
-veg.style.fontSize=size+"px";
-
-if(size>400){
-document.getElementById("warning").style.display="block";
+if(size>300){
+warning.style.display="block";
 }
 
-if(size>700){
+if(size>550){
 
-document.getElementById("explosion").style.display="block";
+explosion.style.display="flex";
 
-document.getElementById("growButton").style.display="none";
+growBtn.style.display="none";
 
-veg.style.display="none";
+vegetable.style.display="none";
 
-document.body.style.animation="shake .3s 3";
+document.body.classList.add("shake");
+
 }
 }
 
