@@ -1,12 +1,250 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>채소 폭탄 넘기기</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Jua',sans-serif;
+}
+
+body{
+overflow:hidden;
+background:linear-gradient(#87CEEB,#CFF4FF);
+height:100vh;
+}
+
+.screen{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+}
+
+h1{
+font-size:60px;
+color:#ff7f50;
+margin-bottom:20px;
+}
+
+.subtitle{
+font-size:28px;
+margin-bottom:40px;
+}
+
+.btn{
+width:320px;
+height:100px;
+border:none;
+border-radius:30px;
+font-size:34px;
+margin:15px;
+cursor:pointer;
+background:#FFD93D;
+box-shadow:0 8px 0 #d6b300;
+}
+
+.btn:hover{
+transform:scale(1.05);
+}
+
+.vegetables{
+display:grid;
+grid-template-columns:repeat(2,250px);
+gap:20px;
+}
+
+.veg{
+background:white;
+border-radius:30px;
+padding:30px;
+font-size:40px;
+cursor:pointer;
+box-shadow:0 5px 20px rgba(0,0,0,0.2);
+text-align:center;
+}
+
+.game-area{
+display:none;
+position:relative;
+width:100vw;
+height:100vh;
+overflow:hidden;
+}
+
+#vegetable{
+position:absolute;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+font-size:120px;
+transition:0.1s;
+}
+
+#warning{
+position:absolute;
+top:40px;
+left:50%;
+transform:translateX(-50%);
+font-size:48px;
+color:red;
+display:none;
+}
+
+#explosion{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:80px;
+display:none;
+text-align:center;
+}
+
+#growButton{
+position:absolute;
+bottom:40px;
+left:50%;
+transform:translateX(-50%);
+width:400px;
+height:120px;
+font-size:40px;
+border:none;
+border-radius:30px;
+background:#4CAF50;
+color:white;
+}
+
+</style>
 </head>
-<body style="font-family:sans-serif;text-align:center;padding:50px;">
-<h1>🥔 채소 폭탄 넘기기</h1>
-<p>GitHub Pages 연결 테스트 성공!</p>
-<p>이제 게임을 올릴 준비가 되었습니다.</p>
+
+<body>
+
+<div id="home" class="screen">
+
+<h1>🥔 채소 폭탄 넘기기 🥬</h1>
+
+<div class="subtitle">
+손으로 채소를 크게 키워보세요!
+</div>
+
+<button class="btn" onclick="showVegetables()">
+혼자 하기
+</button>
+
+</div>
+
+<div id="select" class="screen" style="display:none;">
+
+<h1>채소 선택</h1>
+
+<div class="vegetables">
+
+<div class="veg" onclick="startGame('🥔')">
+🥔<br>고구마
+</div>
+
+<div class="veg" onclick="startGame('🍅')">
+🍅<br>토마토
+</div>
+
+<div class="veg" onclick="startGame('🥔')">
+🥔<br>감자
+</div>
+
+<div class="veg" onclick="startGame('🥬')">
+🥬<br>배추
+</div>
+
+<div class="veg" onclick="startGame('🍄')">
+🍄<br>버섯
+</div>
+
+</div>
+
+</div>
+
+<div class="game-area" id="game">
+
+<div id="warning">
+⚠ 위험해요!<br>
+채소가 너무 커졌어요!
+</div>
+
+<div id="vegetable">
+🥔
+</div>
+
+<div id="explosion">
+💥 채소가 터졌어요!<br><br>
+<button class="btn" onclick="location.reload()">
+다시하기
+</button>
+</div>
+
+<button id="growButton" onclick="growVegetable()">
+채소 키우기
+</button>
+
+</div>
+
+<script>
+
+let size=120;
+
+function showVegetables(){
+document.getElementById("home").style.display="none";
+document.getElementById("select").style.display="flex";
+}
+
+function startGame(icon){
+
+document.getElementById("select").style.display="none";
+document.getElementById("game").style.display="block";
+
+const veg=document.getElementById("vegetable");
+
+veg.innerHTML=icon;
+
+size=120;
+veg.style.fontSize=size+"px";
+}
+
+function growVegetable(){
+
+size+=20;
+
+const veg=document.getElementById("vegetable");
+
+veg.style.fontSize=size+"px";
+
+if(size>400){
+document.getElementById("warning").style.display="block";
+}
+
+if(size>700){
+
+document.getElementById("explosion").style.display="block";
+
+document.getElementById("growButton").style.display="none";
+
+veg.style.display="none";
+
+document.body.style.animation="shake .3s 3";
+}
+}
+
+</script>
+
 </body>
 </html>
