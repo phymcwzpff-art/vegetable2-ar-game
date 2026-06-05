@@ -3,284 +3,302 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>채소 폭탄 넘기기</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<title>채소 키우기 AR 게임</title>
 
 <style>
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:'Jua',sans-serif;
+font-family:'Malgun Gothic',sans-serif;
 }
 
 body{
+background:#000;
 overflow:hidden;
-height:100vh;
-background:linear-gradient(#87CEEB,#DFF8FF);
 }
 
-.cloud{
-position:absolute;
-font-size:80px;
-animation:float 20s linear infinite;
+#video{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+object-fit:cover;
+transform:scaleX(-1);
+z-index:1;
 }
 
-.cloud:nth-child(1){top:50px;left:-200px;}
-.cloud:nth-child(2){top:180px;left:-400px;animation-duration:30s;}
-.cloud:nth-child(3){top:320px;left:-300px;animation-duration:25s;}
-
-@keyframes float{
-from{transform:translateX(0);}
-to{transform:translateX(2200px);}
-}
-
-.screen{
-height:100vh;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-}
-
-h1{
-font-size:70px;
-color:#ff6f3c;
-margin-bottom:20px;
-}
-
-.subtitle{
-font-size:32px;
-margin-bottom:40px;
-}
-
-.btn{
-width:340px;
-height:100px;
-border:none;
-border-radius:30px;
-font-size:36px;
-cursor:pointer;
-background:#FFD93D;
-box-shadow:0 8px 0 #d8b300;
-}
-
-.btn:hover{
-transform:scale(1.05);
-}
-
-.vegetables{
-display:grid;
-grid-template-columns:repeat(2,260px);
-gap:25px;
-}
-
-.veg{
-background:white;
-border-radius:30px;
-padding:25px;
-font-size:42px;
-cursor:pointer;
-text-align:center;
-box-shadow:0 5px 20px rgba(0,0,0,.2);
-transition:.2s;
-}
-
-.veg:hover{
-transform:scale(1.08);
-}
-
-#game{
-display:none;
-position:relative;
-width:100vw;
-height:100vh;
+#overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:2;
+pointer-events:none;
 }
 
 #vegetable{
 position:absolute;
-left:50%;
 top:50%;
+left:50%;
 transform:translate(-50%,-50%);
 font-size:120px;
-transition:.2s;
+transition:0.3s;
+text-shadow:0 0 30px rgba(0,0,0,.4);
 }
 
 #warning{
 position:absolute;
-top:40px;
+top:20px;
 left:50%;
 transform:translateX(-50%);
-font-size:50px;
-color:red;
-display:none;
-text-align:center;
-}
-
-#explosion{
-position:absolute;
-inset:0;
-display:none;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-background:rgba(255,255,255,.85);
-font-size:70px;
-text-align:center;
-}
-
-#growBtn{
-position:absolute;
-bottom:40px;
-left:50%;
-transform:translateX(-50%);
-width:420px;
-height:120px;
-font-size:42px;
-border:none;
-border-radius:30px;
-background:#4CAF50;
+background:red;
 color:white;
+padding:15px 25px;
+border-radius:15px;
+font-size:30px;
+font-weight:bold;
+display:none;
+animation:blink .6s infinite;
 }
 
-.shake{
-animation:shake .3s 5;
+@keyframes blink{
+50%{
+opacity:.3;
+}
 }
 
-@keyframes shake{
-0%{transform:translate(0);}
-25%{transform:translate(8px);}
-50%{transform:translate(-8px);}
-75%{transform:translate(8px);}
-100%{transform:translate(0);}
+#boom{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:250px;
+display:none;
+animation:explode .8s ease-out;
+}
+
+@keyframes explode{
+0%{
+transform:translate(-50%,-50%) scale(.2);
+opacity:1;
+}
+100%{
+transform:translate(-50%,-50%) scale(2);
+opacity:0;
+}
+}
+
+#panel{
+position:fixed;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+justify-content:center;
+z-index:3;
+pointer-events:auto;
+}
+
+button{
+padding:12px 18px;
+font-size:18px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.vegBtn{
+font-size:28px;
+}
+
+#status{
+position:fixed;
+top:80px;
+left:50%;
+transform:translateX(-50%);
+background:rgba(0,0,0,.6);
+color:white;
+padding:10px 20px;
+border-radius:10px;
+font-size:24px;
+z-index:3;
+}
+
+@media (max-width:900px){
+
+#vegetable{
+font-size:90px;
+}
+
+button{
+font-size:15px;
+padding:10px;
+}
+
+#status{
+font-size:18px;
+}
 }
 </style>
 </head>
 
 <body>
 
-<div class="cloud">☁️</div>
-<div class="cloud">☁️</div>
-<div class="cloud">☁️</div>
+<video id="video" autoplay playsinline muted></video>
 
-<div id="home" class="screen">
-
-<h1>🍠 채소 폭탄 넘기기 🍄</h1>
-
-<div class="subtitle">
-채소를 크게 키워보세요!
-</div>
-
-<button class="btn" onclick="showSelect()">
-게임 시작
-</button>
-
-</div>
-
-<div id="select" class="screen" style="display:none;">
-
-<h1>채소 선택</h1>
-
-<div class="vegetables">
-
-<div class="veg" onclick="startGame('🍠')">
-🍠<br>고구마
-</div>
-
-<div class="veg" onclick="startGame('🍅')">
-🍅<br>토마토
-</div>
-
-<div class="veg" onclick="startGame('🥔')">
-🥔<br>감자
-</div>
-
-<div class="veg" onclick="startGame('🥬')">
-🥬<br>배추
-</div>
-
-<div class="veg" onclick="startGame('🍄')">
-🍄<br>버섯
-</div>
-
-</div>
-
-</div>
-
-<div id="game">
+<div id="overlay">
 
 <div id="warning">
-⚠ 위험해요!<br>
-채소가 너무 커졌어요!
+⚠ 너무 많이 키우면 터져요!
 </div>
 
-<div id="vegetable">🍠</div>
+<div id="status">
+크기 : 1단계
+</div>
 
-<div id="explosion">
-💥 채소가 터졌어요!
+<div id="vegetable">🍅</div>
 
-<br><br>
-
-<button class="btn" onclick="location.reload()">
-다시하기
-</button>
+<div id="boom">
+💥
+</div>
 
 </div>
 
-<button id="growBtn" onclick="growVegetable()">
-💪 채소 키우기!
-</button>
+<div id="panel">
+
+<button class="vegBtn" onclick="selectVeg('🍅')">🍅</button>
+<button class="vegBtn" onclick="selectVeg('🥔')">🥔</button>
+<button class="vegBtn" onclick="selectVeg('🥬')">🥬</button>
+<button class="vegBtn" onclick="selectVeg('🍄')">🍄</button>
+<button class="vegBtn" onclick="selectVeg('🍠')">🍠</button>
+
+<button onclick="growVeg()">💪 키우기</button>
+
+<button onclick="resetGame()">🔄 다시하기</button>
+
+<button onclick="toggleFullscreen()">⛶ 전체화면</button>
 
 </div>
 
 <script>
 
-let size=120;
+const video=document.getElementById("video");
+const veg=document.getElementById("vegetable");
+const warning=document.getElementById("warning");
+const boom=document.getElementById("boom");
+const status=document.getElementById("status");
 
-function showSelect(){
-home.style.display="none";
-select.style.display="flex";
+let level=1;
+let exploded=false;
+
+async function startCamera(){
+
+try{
+
+const stream=await navigator.mediaDevices.getUserMedia({
+video:{
+facingMode:"user"
+},
+audio:false
+});
+
+video.srcObject=stream;
+
+}catch(e){
+
+alert("카메라 권한을 허용해주세요.");
+
 }
 
-function startGame(icon){
+}
 
-select.style.display="none";
-game.style.display="block";
+startCamera();
 
-vegetable.innerHTML=icon;
+function selectVeg(icon){
 
-size=120;
-vegetable.style.fontSize=size+"px";
+if(exploded) return;
+
+veg.innerHTML=icon;
+
+}
+
+function growVeg(){
+
+if(exploded) return;
+
+level++;
+
+veg.style.fontSize=(120+(level*25))+"px";
+
+status.innerHTML="크기 : "+level+"단계";
+
+if(level>=8){
+
+warning.style.display="block";
+
+}
+
+if(level>=12){
+
+explode();
+
+}
+
+}
+
+function explode(){
+
+exploded=true;
+
+veg.style.display="none";
 
 warning.style.display="none";
-explosion.style.display="none";
-growBtn.style.display="block";
-vegetable.style.display="block";
-}
 
-function growVegetable(){
+boom.style.display="block";
 
-size+=25;
+setTimeout(()=>{
 
-vegetable.style.fontSize=size+"px";
+boom.style.display="none";
 
-if(size>300){
-warning.style.display="block";
-}
+},800);
 
-if(size>550){
-
-explosion.style.display="flex";
-
-growBtn.style.display="none";
-
-vegetable.style.display="none";
-
-document.body.classList.add("shake");
+status.innerHTML="💥 채소가 터졌어요!";
 
 }
+
+function resetGame(){
+
+level=1;
+exploded=false;
+
+veg.style.display="block";
+boom.style.display="none";
+warning.style.display="none";
+
+veg.style.fontSize="120px";
+
+status.innerHTML="크기 : 1단계";
+
+}
+
+function toggleFullscreen(){
+
+if(!document.fullscreenElement){
+
+document.documentElement.requestFullscreen();
+
+}else{
+
+document.exitFullscreen();
+
+}
+
 }
 
 </script>
