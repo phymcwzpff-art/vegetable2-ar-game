@@ -1,24 +1,94 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>채소 키우기 - 손인식 버전</title>
+
+<title>AR 채소 키우기</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+body{
+margin:0;
+overflow:hidden;
+background:black;
+font-family:sans-serif;
+}
+
+#video{
+position:fixed;
+left:0;
+top:0;
+width:100%;
+height:100%;
+object-fit:cover;
+transform:scaleX(-1);
+}
+
+#veg{
+position:fixed;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+font-size:120px;
+transition:0.15s;
+}
+
+#ui{
+position:fixed;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+padding:12px 24px;
+background:rgba(0,0,0,.5);
+color:white;
+border-radius:12px;
+font-size:28px;
+z-index:100;
+}
+
+#boom{
+position:fixed;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+font-size:180px;
+display:none;
+z-index:200;
+}
+</style>
+
+</head>
+
+<body>
+
+<video id="video" autoplay playsinline></video>
+
+<div id="ui">
+🙌 양손을 보여주세요
+</div>
+
+<div id="veg">
+🍅
+</div>
+
+<div id="boom">
+💥
+</div>
 
 <script>
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
 
+const video = document.getElementById("video");
 const veg = document.getElementById("veg");
 const ui = document.getElementById("ui");
 const boom = document.getElementById("boom");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let exploded = false;
 let biggestDistance = 0;
+let exploded = false;
 
 function explode(){
 
@@ -33,37 +103,32 @@ ui.innerText = "💥 채소가 터졌어요!";
 }
 
 const hands = new Hands({
-locateFile: (file) => {
-return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-}
+locateFile:(file)=>
+`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 
 hands.setOptions({
-maxNumHands: 2,
-modelComplexity: 1,
-minDetectionConfidence: 0.7,
-minTrackingConfidence: 0.7
+maxNumHands:2,
+modelComplexity:1,
+minDetectionConfidence:0.7,
+minTrackingConfidence:0.7
 });
 
-hands.onResults((results) => {
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
+hands.onResults((results)=>{
 
 if(
 results.multiHandLandmarks &&
-results.multiHandLandmarks.length === 2
+results.multiHandLandmarks.length===2
 ){
 
-const hand1 = results.multiHandLandmarks[0][9];
-const hand2 = results.multiHandLandmarks[1][9];
+const h1 = results.multiHandLandmarks[0][9];
+const h2 = results.multiHandLandmarks[1][9];
 
-const dx = hand1.x - hand2.x;
-const dy = hand1.y - hand2.y;
+const dx = h1.x - h2.x;
+const dy = h1.y - h2.y;
 
-const distance = Math.sqrt(
-dx * dx +
-dy * dy
-);
+const distance =
+Math.sqrt(dx*dx + dy*dy);
 
 if(distance > biggestDistance){
 
@@ -79,7 +144,7 @@ size + "px";
 ui.innerText =
 "🌱 채소 성장중!";
 
-if(size > 500){
+if(size > 600){
 
 explode();
 
@@ -97,9 +162,9 @@ ui.innerText =
 });
 
 const camera = new Camera(video,{
-onFrame: async () => {
+onFrame:async()=>{
 await hands.send({
-image: video
+image:video
 });
 },
 width:1280,
@@ -107,145 +172,7 @@ height:720
 });
 
 camera.start();
-</script>
 
-
-<style>
-body{
-margin:0;
-overflow:hidden;
-background:black;
-font-family:Arial;
-}
-
-#video{
-position:fixed;
-width:100%;
-height:100%;
-object-fit:cover;
-transform:scaleX(-1);
-}
-
-#canvas{
-position:fixed;
-width:100%;
-height:100%;
-pointer-events:none;
-}
-
-#veg{
-position:fixed;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-font-size:120px;
-transition:0.2s;
-}
-
-#ui{
-position:fixed;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-color:white;
-font-size:24px;
-background:rgba(0,0,0,0.5);
-padding:10px 20px;
-border-radius:10px;
-}
-
-#boom{
-position:fixed;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-font-size:200px;
-display:none;
-}
-</style>
-</head>
-
-<body>
-
-<video id="video" autoplay playsinline></video>
-<canvas id="canvas"></canvas>
-
-<div id="ui">손을 보여주세요 ✋</div>
-<div id="veg">🍅</div>
-<div id="boom">💥</div>
-
-<script>
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const veg = document.getElementById("veg");
-const ui = document.getElementById("ui");
-const boom = document.getElementById("boom");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let level = 1;
-let exploded = false;
-
-function grow(){
-if(exploded) return;
-
-level++;
-
-veg.style.fontSize = (120 + level*30) + "px";
-
-ui.innerText = "성장중 🌱 " + level;
-
-if(level >= 7){
-explode();
-}
-}
-
-function explode(){
-exploded = true;
-veg.style.display = "none";
-boom.style.display = "block";
-ui.innerText = "💥 터졌어요!";
-}
-
-const hands = new Hands({
-locateFile: (file) => {
-return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-}
-});
-
-hands.setOptions({
-maxNumHands: 1,
-modelComplexity: 1,
-minDetectionConfidence: 0.7,
-minTrackingConfidence: 0.7
-});
-
-hands.onResults((results) => {
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0){
-
-ui.innerText = "손 감지됨 ✋ 성장!";
-grow();
-
-}else{
-ui.innerText = "손을 보여주세요 ✋";
-}
-});
-
-const camera = new Camera(video, {
-onFrame: async () => {
-await hands.send({image: video});
-},
-width: 1280,
-height: 720
-});
-
-camera.start();
 </script>
 
 </body>
