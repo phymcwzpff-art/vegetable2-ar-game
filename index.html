@@ -1,185 +1,169 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<title>AR 채소 키우기 게임</title>
+<meta charset="UTF-8">
+<title>AR 채소 폭탄 넘기기 게임</title>
+
 <style>
-  body { margin:0; overflow:hidden; background:black; }
-  #video {
-    position:absolute;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-  }
+body { margin:0; overflow:hidden; background:black; }
 
-  #ui {
-    position:absolute;
-    top:20px;
-    left:20px;
-    color:white;
-    font-size:24px;
-    z-index:10;
-  }
+video {
+  position:absolute;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
 
-  .emoji {
-    position:absolute;
-    font-size:40px;
-    transition: transform 0.2s;
-    pointer-events:none;
-  }
+#ui {
+  position:absolute;
+  top:10px;
+  left:10px;
+  color:white;
+  font-size:22px;
+  z-index:10;
+}
 
-  #bombMsg {
-    position:absolute;
-    bottom:80px;
-    width:100%;
-    text-align:center;
-    font-size:50px;
-    color:red;
-    display:none;
-  }
+#turn {
+  font-size:26px;
+  color:yellow;
+}
+
+.veg {
+  position:absolute;
+  font-size:70px;
+  transform:translate(-50%,-50%);
+}
+
+#boom {
+  position:absolute;
+  width:100%;
+  text-align:center;
+  top:40%;
+  font-size:80px;
+  color:red;
+  display:none;
+}
+
+canvas {
+  position:absolute;
+  top:0;
+  left:0;
+}
 </style>
 </head>
 
 <body>
 
 <video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
 
 <div id="ui">
-  🥕 채소 키우기 게임 <br/>
-  점수: <span id="score">0</span>
+  <div id="turn">현재: P1</div>
+  <div>점수: <span id="score">0</span></div>
 </div>
 
-<div id="bombMsg">💥 펑~!!</div>
+<div id="boom">💥 펑~!!</div>
 
 <script src="game.js"></script>
-
 </body>
 </html>const video = document.getElementById("video");
-const scoreEl = document.getElementById("score");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let turn = 1;
 let score = 0;
-let veggies = [];
-let bomb = null;
 
-// 카메라 실행
-navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+let handA = null;
+let handB = null;
+
+let veg = { x:0, y:0, size:100 };
+
+navigator.mediaDevices.getUserMedia({ video:true }).then(stream=>{
   video.srcObject = stream;
 });
 
-// 랜덤 채소
-const veggieList = ["🥕", "🍅", "🥒", "🥬", "🌽"];
+/*
+👉 MediaPipe Hands 연결했다고 가정
+results.multiHandLandmarks 사용
+*/
 
-// 채소 생성
-function spawnVeggie() {
-  const el = document.createElement("div");
-  el.className = "emoji";
-  el.innerText = veggieList[Math.floor(Math.random() * veggieList.length)];
+function updateHands(results){
 
-  const x = window.innerWidth / 2 + (Math.random() * 200 - 100);
-  const y = window.innerHeight / 2 + (Math.random() * 200 - 100);
+  if(!results.multiHandLandmarks) return;
 
-  el.style.left = x + "px";
-  el.style.top = y + "px";
-  el.style.transform = "scale(1)";
+  if(results.multiHandLandmarks.length >= 2){
 
-  document.body.appendChild(el);
+    handA = results.multiHandLandmarks[0][0]; // 손목
+    handB = results.multiHandLandmarks[1][0];
 
-  const obj = { el, x, y, size: 1 };
-  veggies.push(obj);
-}
+    const x1 = handA.x * canvas.width;
+    const y1 = handA.y * canvas.height;
 
-// 계속 생성
-setInterval(spawnVeggie, 1500);
+    const x2 = handB.x * canvas.width;
+    const y2 = handB.y * canvas.height;
 
-// 간단 손 추적 (중앙 기준)
-let handX = window.innerWidth / 2;
-let handY = window.innerHeight / 2;
+    // 중앙 위치
+    veg.x = (x1 + x2) / 2;
+    veg.y = (y1 + y2) / 2;
 
-// 마우스로 손 대신 테스트
-window.addEventListener("mousemove", (e) => {
-  handX = e.clientX;
-  handY = e.clientY;
-});
-
-// 채소 키우기 로직
-function updateVeggies() {
-  veggies.forEach(v => {
-    const dx = handX - v.x;
-    const dy = handY - v.y;
+    // 거리 = 크기 (핵심!!)
+    const dx = x1 - x2;
+    const dy = y1 - y2;
     const dist = Math.sqrt(dx*dx + dy*dy);
 
-    if (dist < 120) {
-      v.size += 0.02;
-      score += 1;
-      scoreEl.innerText = score;
+    veg.size = dist * 1.8;
 
-      v.el.style.transform = `scale(${v.size})`;
-    }
-  });
+    drawLine(x1,y1,x2,y2);
+  }
 }
 
-setInterval(updateVeggies, 50);// 폭탄 생성
-function spawnBomb() {
-  if (bomb) return;
+// 점선
+function drawLine(x1,y1,x2,y2){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  const el = document.createElement("div");
-  el.className = "emoji";
-  el.innerText = "💣";
+  ctx.beginPath();
+  ctx.setLineDash([10,10]);
+  ctx.strokeStyle="yellow";
+  ctx.lineWidth=4;
 
-  const x = Math.random() * window.innerWidth;
-  const y = Math.random() * window.innerHeight;
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+}const boom = document.getElementById("boom");
+const turnText = document.getElementById("turn");
 
-  el.style.left = x + "px";
-  el.style.top = y + "px";
+function renderVeg(){
 
-  document.body.appendChild(el);
+  ctx.font = veg.size + "px serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🍅", veg.x, veg.y);
 
-  bomb = { el, x, y };
-}
-
-// 6초마다 폭탄 등장
-setInterval(spawnBomb, 6000);
-
-// 폭탄 충돌 체크 (손 위치)
-function checkBomb() {
-  if (!bomb) return;
-
-  const dx = handX - bomb.x;
-  const dy = handY - bomb.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-
-  if (dist < 80) {
+  if(veg.size > 450){
     explode();
   }
 }
 
-setInterval(checkBomb, 30);
+function explode(){
 
-// 펑 효과
-function explode() {
-  document.getElementById("bombMsg").style.display = "block";
+  boom.style.display = "block";
 
-  setTimeout(() => {
-    document.getElementById("bombMsg").style.display = "none";
-  }, 600);
+  setTimeout(()=>{
+    boom.style.display = "none";
+  },600);
 
-  bomb.el.remove();
-  bomb = null;
+  // 턴 변경
+  turn = turn === 1 ? 2 : 1;
+  turnText.innerText = "현재: P" + turn;
 
-  // 점수 감소
-  score = Math.max(0, score - 20);
-  scoreEl.innerText = score;
+  // 리셋
+  veg.size = 100;
 }
 
-// 폭탄 피하기 이동 (자동 흔들림)
-function moveBomb() {
-  if (!bomb) return;
-
-  bomb.x += (Math.random() - 0.5) * 20;
-  bomb.y += (Math.random() - 0.5) * 20;
-
-  bomb.el.style.left = bomb.x + "px";
-  bomb.el.style.top = bomb.y + "px";
+function loop(){
+  requestAnimationFrame(loop);
+  renderVeg();
 }
-
-setInterval(moveBomb, 100);
+loop();
