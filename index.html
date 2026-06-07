@@ -2,12 +2,11 @@
 
 <html lang="ko">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>채소 폭탄 넘기기</title>
-
-<link rel="stylesheet" href="style.css">
+<title>AR 채소 키우기</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
@@ -15,45 +14,372 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Jua',sans-serif;
+}
+
+body{
+overflow:hidden;
+background:black;
+}
+
+#video{
+position:fixed;
+left:0;
+top:0;
+width:100%;
+height:100%;
+object-fit:cover;
+transform:scaleX(-1);
+}
+
+#canvas{
+position:fixed;
+left:0;
+top:0;
+width:100%;
+height:100%;
+pointer-events:none;
+}
+
+#menu{
+position:fixed;
+inset:0;
+background:#87CEEB;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:1000;
+}
+
+#menu h1{
+font-size:60px;
+margin-bottom:30px;
+}
+
+.vegBtn{
+width:280px;
+height:90px;
+font-size:40px;
+margin:10px;
+border:none;
+border-radius:20px;
+cursor:pointer;
+}
+
+#status{
+position:fixed;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+background:rgba(0,0,0,.6);
+color:white;
+padding:15px 25px;
+border-radius:20px;
+font-size:28px;
+z-index:100;
+}
+
+#warning{
+position:fixed;
+top:90px;
+left:50%;
+transform:translateX(-50%);
+font-size:50px;
+font-weight:bold;
+color:yellow;
+display:none;
+z-index:100;
+}
+
+#veg{
+position:fixed;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+font-size:120px;
+z-index:50;
+}
+
+#result{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.85);
+display:none;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+color:white;
+z-index:2000;
+}
+
+#result h1{
+font-size:80px;
+margin-bottom:20px;
+}
+
+#result button{
+font-size:32px;
+padding:15px 30px;
+border:none;
+border-radius:20px;
+cursor:pointer;
+}
+
+</style>
+
 </head>
 
 <body>
+
+<div id="menu">
+
+<h1>🥕 채소 키우기 🥬</h1>
+
+<button class="vegBtn" onclick="selectVegetable('🍠')">
+🍠 고구마
+</button>
+
+<button class="vegBtn" onclick="selectVegetable('🍅')">
+🍅 토마토
+</button>
+
+<button class="vegBtn" onclick="selectVegetable('🥔')">
+🥔 감자
+</button>
+
+<button class="vegBtn" onclick="selectVegetable('🥬')">
+🥬 배추
+</button>
+
+<button class="vegBtn" onclick="selectVegetable('🍄')">
+🍄 버섯
+</button>
+
+</div>
 
 <video id="video" autoplay playsinline></video>
 
 <canvas id="canvas"></canvas>
 
-<div id="topUI">
-
-<div id="turn">
-현재 차례 : 플레이어 1
-</div>
-
 <div id="status">
-🙌 양손을 보여주세요
-</div>
-
+채소를 선택해주세요
 </div>
 
 <div id="warning">
-⚠ 위험해요! 친구에게 보내세요!
+⚠ 위험해요!
 </div>
 
 <div id="veg">
 🍅
 </div>
 
-<div id="result" class="hidden">
+<div id="result">
 
-<h1 id="resultTitle"></h1>
+<h1 id="resultTitle">
+💥 채소가 터졌어요!
+</h1>
 
 <button onclick="location.reload()">
 다시하기
 </button>
 
 </div>
+<script>
 
-<script src="game.js"></script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const veg = document.getElementById("veg");
+const menu = document.getElementById("menu");
+const statusText = document.getElementById("status");
+const warning = document.getElementById("warning");
+
+const result = document.getElementById("result");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let gameStart = false;
+let exploded = false;
+
+let size = 120;
+let startDistance = null;
+
+function selectVegetable(icon){
+
+veg.innerHTML = icon;
+
+menu.style.display = "none";
+
+statusText.innerText =
+"🙌 양손을 보여주세요";
+
+gameStart = true;
+}
+
+function explode(){
+
+if(exploded) return;
+
+exploded = true;
+
+result.style.display = "flex";
+}
+
+const hands = new Hands({
+locateFile:(file)=>
+`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+
+hands.setOptions({
+maxNumHands:2,
+modelComplexity:1,
+minDetectionConfidence:0.7,
+minTrackingConfidence:0.7
+});
+
+hands.onResults((results)=>{
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+if(!gameStart) return;
+
+if(exploded) return;
+
+if(
+results.multiHandLandmarks &&
+results.multiHandLandmarks.length === 2
+){
+
+for(const landmarks of results.multiHandLandmarks){
+
+drawConnectors(
+ctx,
+landmarks,
+HAND_CONNECTIONS,
+{
+color:"#00FF00",
+lineWidth:4
+}
+);
+
+drawLandmarks(
+ctx,
+landmarks,
+{
+color:"#00FF00",
+lineWidth:2
+}
+);
+
+}
+
+const h1 =
+results.multiHandLandmarks[0][9];
+
+const h2 =
+results.multiHandLandmarks[1][9];
+
+const centerX =
+(h1.x+h2.x)/2;
+
+const centerY =
+(h1.y+h2.y)/2;
+
+veg.style.left =
+(centerX*window.innerWidth)+"px";
+
+veg.style.top =
+(centerY*window.innerHeight)+"px";
+
+const dx =
+h1.x-h2.x;
+
+const dy =
+h1.y-h2.y;
+
+const distance =
+Math.sqrt(
+dx*dx + dy*dy
+);
+
+if(startDistance===null){
+
+startDistance = distance;
+
+return;
+}
+
+const growth =
+distance - startDistance;
+
+if(growth > 0){
+
+size += growth * 30;
+
+if(size > 1800){
+size = 1800;
+}
+
+veg.style.fontSize =
+size + "px";
+}
+
+if(size > 700){
+
+warning.style.display =
+"block";
+
+}else{
+
+warning.style.display =
+"none";
+}
+
+if(size > 1400){
+
+explode();
+}
+
+statusText.innerText =
+"🌱 채소 성장중";
+
+}else{
+
+statusText.innerText =
+"🙌 양손을 보여주세요";
+
+startDistance = null;
+}
+
+});
+
+const camera = new Camera(video,{
+onFrame:async()=>{
+await hands.send({
+image:video
+});
+},
+width:1280,
+height:720
+});
+
+camera.start();
+
+</script>
 
 </body>
 </html>
