@@ -2,7 +2,6 @@
 
 <html lang="ko">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -20,7 +19,7 @@
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:'Jua',sans-serif;
+font-family:sans-serif;
 }
 
 body{
@@ -60,14 +59,14 @@ z-index:1000;
 
 #menu h1{
 font-size:60px;
-margin-bottom:30px;
+margin-bottom:20px;
 }
 
 .vegBtn{
 width:280px;
-height:90px;
-font-size:40px;
-margin:10px;
+height:80px;
+margin:8px;
+font-size:34px;
 border:none;
 border-radius:20px;
 cursor:pointer;
@@ -80,8 +79,8 @@ left:50%;
 transform:translateX(-50%);
 background:rgba(0,0,0,.6);
 color:white;
-padding:15px 25px;
-border-radius:20px;
+padding:12px 20px;
+border-radius:15px;
 font-size:28px;
 z-index:100;
 }
@@ -91,7 +90,7 @@ position:fixed;
 top:90px;
 left:50%;
 transform:translateX(-50%);
-font-size:50px;
+font-size:48px;
 font-weight:bold;
 color:yellow;
 display:none;
@@ -140,27 +139,9 @@ cursor:pointer;
 
 <div id="menu">
 
-<h1>🥕 채소 키우기 🥬</h1>
+<h1>🥬 채소 키우기 🥕</h1>
 
-<button class="vegBtn" onclick="selectVegetable('🍠')">
-🍠 고구마
-</button>
-
-<button class="vegBtn" onclick="selectVegetable('🍅')">
-🍅 토마토
-</button>
-
-<button class="vegBtn" onclick="selectVegetable('🥔')">
-🥔 감자
-</button>
-
-<button class="vegBtn" onclick="selectVegetable('🥬')">
-🥬 배추
-</button>
-
-<button class="vegBtn" onclick="selectVegetable('🍄')">
-🍄 버섯
-</button>
+<button class="vegBtn" onclick="selectVegetable('🍠')">🍠 고구마</button> <button class="vegBtn" onclick="selectVegetable('🍅')">🍅 토마토</button> <button class="vegBtn" onclick="selectVegetable('🥔')">🥔 감자</button> <button class="vegBtn" onclick="selectVegetable('🥬')">🥬 배추</button> <button class="vegBtn" onclick="selectVegetable('🍄')">🍄 버섯</button>
 
 </div>
 
@@ -182,7 +163,7 @@ cursor:pointer;
 
 <div id="result">
 
-<h1 id="resultTitle">
+<h1>
 💥 채소가 터졌어요!
 </h1>
 
@@ -201,7 +182,6 @@ const veg = document.getElementById("veg");
 const menu = document.getElementById("menu");
 const statusText = document.getElementById("status");
 const warning = document.getElementById("warning");
-
 const result = document.getElementById("result");
 
 canvas.width = window.innerWidth;
@@ -223,6 +203,9 @@ statusText.innerText =
 "🙌 양손을 보여주세요";
 
 gameStart = true;
+
+size = 120;
+veg.style.fontSize = "120px";
 }
 
 function explode(){
@@ -242,8 +225,8 @@ locateFile:(file)=>
 hands.setOptions({
 maxNumHands:2,
 modelComplexity:1,
-minDetectionConfidence:0.7,
-minTrackingConfidence:0.7
+minDetectionConfidence:0.5,
+minTrackingConfidence:0.5
 });
 
 hands.onResults((results)=>{
@@ -256,7 +239,6 @@ canvas.height
 );
 
 if(!gameStart) return;
-
 if(exploded) return;
 
 if(
@@ -288,47 +270,46 @@ lineWidth:2
 }
 
 const h1 =
-results.multiHandLandmarks[0][9];
+results.multiHandLandmarks[0][0];
 
 const h2 =
-results.multiHandLandmarks[1][9];
+results.multiHandLandmarks[1][0];
 
 const centerX =
-(h1.x+h2.x)/2;
+(h1.x + h2.x) / 2;
 
 const centerY =
-(h1.y+h2.y)/2;
+(h1.y + h2.y) / 2;
 
 veg.style.left =
-(centerX*window.innerWidth)+"px";
+(centerX * window.innerWidth) + "px";
 
 veg.style.top =
-(centerY*window.innerHeight)+"px";
+(centerY * window.innerHeight) + "px";
 
-const dx =
-h1.x-h2.x;
-
-const dy =
-h1.y-h2.y;
+const dx = h1.x - h2.x;
+const dy = h1.y - h2.y;
 
 const distance =
-Math.sqrt(
-dx*dx + dy*dy
-);
+Math.sqrt(dx*dx + dy*dy);
 
-if(startDistance===null){
+if(startDistance === null){
 
 startDistance = distance;
+
+statusText.innerText =
+"🌱 손을 벌려 채소를 키워보세요";
 
 return;
 }
 
 const growth =
-distance - startDistance;
+Math.max(
+0,
+distance - startDistance
+);
 
-if(growth > 0){
-
-size += growth * 30;
+size += growth * 120;
 
 if(size > 1800){
 size = 1800;
@@ -336,9 +317,8 @@ size = 1800;
 
 veg.style.fontSize =
 size + "px";
-}
 
-if(size > 700){
+if(size > 450){
 
 warning.style.display =
 "block";
@@ -349,13 +329,13 @@ warning.style.display =
 "none";
 }
 
-if(size > 1400){
+if(size > 900){
 
 explode();
 }
 
 statusText.innerText =
-"🌱 채소 성장중";
+"🌱 채소 성장중!";
 
 }else{
 
