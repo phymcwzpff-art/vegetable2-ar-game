@@ -1,365 +1,185 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>AR 채소 키우기</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
+<meta charset="UTF-8" />
+<title>AR 채소 키우기 게임</title>
 <style>
+  body { margin:0; overflow:hidden; background:black; }
+  #video {
+    position:absolute;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:sans-serif;
-}
+  #ui {
+    position:absolute;
+    top:20px;
+    left:20px;
+    color:white;
+    font-size:24px;
+    z-index:10;
+  }
 
-body{
-overflow:hidden;
-background:black;
-}
+  .emoji {
+    position:absolute;
+    font-size:40px;
+    transition: transform 0.2s;
+    pointer-events:none;
+  }
 
-#video{
-position:fixed;
-left:0;
-top:0;
-width:100%;
-height:100%;
-object-fit:cover;
-transform:scaleX(-1);
-}
-
-#canvas{
-position:fixed;
-left:0;
-top:0;
-width:100%;
-height:100%;
-pointer-events:none;
-}
-
-#menu{
-position:fixed;
-inset:0;
-background:#87CEEB;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-z-index:1000;
-}
-
-#menu h1{
-font-size:60px;
-margin-bottom:20px;
-}
-
-.vegBtn{
-width:280px;
-height:80px;
-margin:8px;
-font-size:34px;
-border:none;
-border-radius:20px;
-cursor:pointer;
-}
-
-#status{
-position:fixed;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-background:rgba(0,0,0,.6);
-color:white;
-padding:12px 20px;
-border-radius:15px;
-font-size:28px;
-z-index:100;
-}
-
-#warning{
-position:fixed;
-top:90px;
-left:50%;
-transform:translateX(-50%);
-font-size:48px;
-font-weight:bold;
-color:yellow;
-display:none;
-z-index:100;
-}
-
-#veg{
-position:fixed;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-font-size:120px;
-z-index:50;
-}
-
-#result{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.85);
-display:none;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-color:white;
-z-index:2000;
-}
-
-#result h1{
-font-size:80px;
-margin-bottom:20px;
-}
-
-#result button{
-font-size:32px;
-padding:15px 30px;
-border:none;
-border-radius:20px;
-cursor:pointer;
-}
-
+  #bombMsg {
+    position:absolute;
+    bottom:80px;
+    width:100%;
+    text-align:center;
+    font-size:50px;
+    color:red;
+    display:none;
+  }
 </style>
-
 </head>
 
 <body>
 
-<div id="menu">
-
-<h1>🥬 채소 키우기 🥕</h1>
-
-<button class="vegBtn" onclick="selectVegetable('🍠')">🍠 고구마</button> <button class="vegBtn" onclick="selectVegetable('🍅')">🍅 토마토</button> <button class="vegBtn" onclick="selectVegetable('🥔')">🥔 감자</button> <button class="vegBtn" onclick="selectVegetable('🥬')">🥬 배추</button> <button class="vegBtn" onclick="selectVegetable('🍄')">🍄 버섯</button>
-
-</div>
-
 <video id="video" autoplay playsinline></video>
 
-<canvas id="canvas"></canvas>
-
-<div id="status">
-채소를 선택해주세요
+<div id="ui">
+  🥕 채소 키우기 게임 <br/>
+  점수: <span id="score">0</span>
 </div>
 
-<div id="warning">
-⚠ 위험해요!
-</div>
+<div id="bombMsg">💥 펑~!!</div>
 
-<div id="veg">
-🍅
-</div>
-
-<div id="result">
-
-<h1>
-💥 채소가 터졌어요!
-</h1>
-
-<button onclick="location.reload()">
-다시하기
-</button>
-
-</div>
-<script>
-
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const veg = document.getElementById("veg");
-const menu = document.getElementById("menu");
-const statusText = document.getElementById("status");
-const warning = document.getElementById("warning");
-const result = document.getElementById("result");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let gameStart = false;
-let exploded = false;
-
-let size = 120;
-let startDistance = null;
-
-function selectVegetable(icon){
-
-veg.innerHTML = icon;
-
-menu.style.display = "none";
-
-statusText.innerText =
-"🙌 양손을 보여주세요";
-
-gameStart = true;
-
-size = 120;
-veg.style.fontSize = "120px";
-}
-
-function explode(){
-
-if(exploded) return;
-
-exploded = true;
-
-result.style.display = "flex";
-}
-
-const hands = new Hands({
-locateFile:(file)=>
-`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-});
-
-hands.setOptions({
-maxNumHands:2,
-modelComplexity:1,
-minDetectionConfidence:0.5,
-minTrackingConfidence:0.5
-});
-
-hands.onResults((results)=>{
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-if(!gameStart) return;
-if(exploded) return;
-
-if(
-results.multiHandLandmarks &&
-results.multiHandLandmarks.length === 2
-){
-
-for(const landmarks of results.multiHandLandmarks){
-
-drawConnectors(
-ctx,
-landmarks,
-HAND_CONNECTIONS,
-{
-color:"#00FF00",
-lineWidth:4
-}
-);
-
-drawLandmarks(
-ctx,
-landmarks,
-{
-color:"#00FF00",
-lineWidth:2
-}
-);
-
-}
-
-const h1 =
-results.multiHandLandmarks[0][0];
-
-const h2 =
-results.multiHandLandmarks[1][0];
-
-const centerX =
-(h1.x + h2.x) / 2;
-
-const centerY =
-(h1.y + h2.y) / 2;
-
-veg.style.left =
-(centerX * window.innerWidth) + "px";
-
-veg.style.top =
-(centerY * window.innerHeight) + "px";
-
-const dx = h1.x - h2.x;
-const dy = h1.y - h2.y;
-
-const distance =
-Math.sqrt(dx*dx + dy*dy);
-
-if(startDistance === null){
-
-startDistance = distance;
-
-statusText.innerText =
-"🌱 손을 벌려 채소를 키워보세요";
-
-return;
-}
-
-const growth =
-Math.max(
-0,
-distance - startDistance
-);
-
-size += growth * 120;
-
-if(size > 1800){
-size = 1800;
-}
-
-veg.style.fontSize =
-size + "px";
-
-if(size > 450){
-
-warning.style.display =
-"block";
-
-}else{
-
-warning.style.display =
-"none";
-}
-
-if(size > 900){
-
-explode();
-}
-
-statusText.innerText =
-"🌱 채소 성장중!";
-
-}else{
-
-statusText.innerText =
-"🙌 양손을 보여주세요";
-
-startDistance = null;
-}
-
-});
-
-const camera = new Camera(video,{
-onFrame:async()=>{
-await hands.send({
-image:video
-});
-},
-width:1280,
-height:720
-});
-
-camera.start();
-
-</script>
+<script src="game.js"></script>
 
 </body>
-</html>
+</html>const video = document.getElementById("video");
+const scoreEl = document.getElementById("score");
+
+let score = 0;
+let veggies = [];
+let bomb = null;
+
+// 카메라 실행
+navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+  video.srcObject = stream;
+});
+
+// 랜덤 채소
+const veggieList = ["🥕", "🍅", "🥒", "🥬", "🌽"];
+
+// 채소 생성
+function spawnVeggie() {
+  const el = document.createElement("div");
+  el.className = "emoji";
+  el.innerText = veggieList[Math.floor(Math.random() * veggieList.length)];
+
+  const x = window.innerWidth / 2 + (Math.random() * 200 - 100);
+  const y = window.innerHeight / 2 + (Math.random() * 200 - 100);
+
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  el.style.transform = "scale(1)";
+
+  document.body.appendChild(el);
+
+  const obj = { el, x, y, size: 1 };
+  veggies.push(obj);
+}
+
+// 계속 생성
+setInterval(spawnVeggie, 1500);
+
+// 간단 손 추적 (중앙 기준)
+let handX = window.innerWidth / 2;
+let handY = window.innerHeight / 2;
+
+// 마우스로 손 대신 테스트
+window.addEventListener("mousemove", (e) => {
+  handX = e.clientX;
+  handY = e.clientY;
+});
+
+// 채소 키우기 로직
+function updateVeggies() {
+  veggies.forEach(v => {
+    const dx = handX - v.x;
+    const dy = handY - v.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < 120) {
+      v.size += 0.02;
+      score += 1;
+      scoreEl.innerText = score;
+
+      v.el.style.transform = `scale(${v.size})`;
+    }
+  });
+}
+
+setInterval(updateVeggies, 50);// 폭탄 생성
+function spawnBomb() {
+  if (bomb) return;
+
+  const el = document.createElement("div");
+  el.className = "emoji";
+  el.innerText = "💣";
+
+  const x = Math.random() * window.innerWidth;
+  const y = Math.random() * window.innerHeight;
+
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  document.body.appendChild(el);
+
+  bomb = { el, x, y };
+}
+
+// 6초마다 폭탄 등장
+setInterval(spawnBomb, 6000);
+
+// 폭탄 충돌 체크 (손 위치)
+function checkBomb() {
+  if (!bomb) return;
+
+  const dx = handX - bomb.x;
+  const dy = handY - bomb.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist < 80) {
+    explode();
+  }
+}
+
+setInterval(checkBomb, 30);
+
+// 펑 효과
+function explode() {
+  document.getElementById("bombMsg").style.display = "block";
+
+  setTimeout(() => {
+    document.getElementById("bombMsg").style.display = "none";
+  }, 600);
+
+  bomb.el.remove();
+  bomb = null;
+
+  // 점수 감소
+  score = Math.max(0, score - 20);
+  scoreEl.innerText = score;
+}
+
+// 폭탄 피하기 이동 (자동 흔들림)
+function moveBomb() {
+  if (!bomb) return;
+
+  bomb.x += (Math.random() - 0.5) * 20;
+  bomb.y += (Math.random() - 0.5) * 20;
+
+  bomb.el.style.left = bomb.x + "px";
+  bomb.el.style.top = bomb.y + "px";
+}
+
+setInterval(moveBomb, 100);
