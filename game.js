@@ -8,30 +8,14 @@ canvas.height = window.innerHeight;
 const veg = document.getElementById("veg");
 const warning = document.getElementById("warning");
 const statusText = document.getElementById("status");
-const turnText = document.getElementById("turn");
 
 const result = document.getElementById("result");
 const resultTitle = document.getElementById("resultTitle");
 
-let player = 1;
 let exploded = false;
 
 let size = 120;
-
 let startDistance = null;
-let maxGrowth = 0;
-
-let lastCenterX = 0;
-let lastTime = Date.now();
-
-function changeTurn(){
-
-player = player === 1 ? 2 : 1;
-
-turnText.innerText =
-"현재 차례 : 플레이어 " + player;
-
-}
 
 function explode(){
 
@@ -42,47 +26,7 @@ exploded = true;
 result.classList.remove("hidden");
 
 resultTitle.innerText =
-"💥 플레이어 " +
-player +
-" 패배!";
-}
-
-function passVegetable(direction){
-
-const startX =
-parseFloat(veg.style.left);
-
-let x = startX;
-
-const target =
-direction === "right"
-? window.innerWidth + 300
-: -300;
-
-const interval = setInterval(()=>{
-
-x += direction === "right"
-? 40
-: -40;
-
-veg.style.left = x + "px";
-
-if(
-(direction==="right" && x>target) ||
-(direction==="left" && x<target)
-){
-
-clearInterval(interval);
-
-changeTurn();
-
-veg.style.left =
-(window.innerWidth/2)+"px";
-
-}
-
-},16);
-
+"💥 채소가 터졌어요!";
 }
 
 const hands = new Hands({
@@ -93,8 +37,8 @@ locateFile:(file)=>
 hands.setOptions({
 maxNumHands:2,
 modelComplexity:1,
-minDetectionConfidence:0.8,
-minTrackingConfidence:0.8
+minDetectionConfidence:0.75,
+minTrackingConfidence:0.75
 });
 
 hands.onResults((results)=>{
@@ -149,20 +93,26 @@ const centerY =
 (h1.y+h2.y)/2;
 
 veg.style.left =
-(centerX*window.innerWidth)+"px";
+(centerX * window.innerWidth) + "px";
 
 veg.style.top =
-(centerY*window.innerHeight)+"px";
+(centerY * window.innerHeight) + "px";
 
-const dx=h1.x-h2.x;
-const dy=h1.y-h2.y;
+const dx =
+h1.x - h2.x;
+
+const dy =
+h1.y - h2.y;
 
 const distance =
-Math.sqrt(dx*dx+dy*dy);
+Math.sqrt(dx*dx + dy*dy);
 
-if(startDistance===null){
+if(startDistance === null){
 
 startDistance = distance;
+
+statusText.innerText =
+"🌱 손을 벌려 채소를 키워보세요";
 
 return;
 
@@ -171,58 +121,43 @@ return;
 const growth =
 Math.max(
 0,
-distance-startDistance
+distance - startDistance
 );
 
-size += growth * 4;
+size += growth * 20;
+
+if(size > 1800){
+size = 1800;
+}
 
 veg.style.fontSize =
-Math.min(size,900)+"px";
+size + "px";
 
-if(size>450){
+if(size > 700){
 
-warning.style.display="block";
+warning.style.display =
+"block";
+
+warning.innerText =
+"⚠ 위험해요!";
 
 }
 
-if(size>850){
+if(size > 1400){
 
 explode();
 
 }
 
-const now = Date.now();
-
-const speed =
-(centerX-lastCenterX)/
-(now-lastTime);
-
-if(Math.abs(speed)>0.01){
-
-if(speed>0){
-
-passVegetable("right");
-
-}else{
-
-passVegetable("left");
-
-}
-
-}
-
-lastCenterX = centerX;
-lastTime = now;
-
 statusText.innerText =
-"🌱 채소 키우는 중";
+"🌱 채소 성장중";
 
 }else{
 
 statusText.innerText =
 "🙌 양손을 보여주세요";
 
-startDistance=null;
+startDistance = null;
 
 }
 
