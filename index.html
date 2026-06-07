@@ -5,105 +5,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AR 채소 키우기</title>
+<title>채소 폭탄 넘기기</title>
+
+<link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:sans-serif;
-}
-
-body{
-overflow:hidden;
-background:black;
-}
-
-#video{
-position:fixed;
-left:0;
-top:0;
-width:100%;
-height:100%;
-object-fit:cover;
-transform:scaleX(-1);
-}
-
-#canvas{
-position:fixed;
-left:0;
-top:0;
-width:100%;
-height:100%;
-pointer-events:none;
-}
-
-#ui{
-position:fixed;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-background:rgba(0,0,0,.55);
-color:white;
-padding:15px 25px;
-border-radius:20px;
-font-size:30px;
-z-index:100;
-}
-
-#warning{
-position:fixed;
-top:90px;
-left:50%;
-transform:translateX(-50%);
-font-size:48px;
-font-weight:bold;
-color:yellow;
-display:none;
-z-index:100;
-text-shadow:2px 2px 4px black;
-}
-
-#veg{
-position:fixed;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-font-size:120px;
-z-index:50;
-user-select:none;
-}
-
-#boom{
-position:fixed;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-font-size:180px;
-display:none;
-z-index:200;
-text-align:center;
-color:white;
-}
-
-#restart{
-margin-top:20px;
-font-size:32px;
-padding:15px 30px;
-border:none;
-border-radius:20px;
-cursor:pointer;
-}
-
-</style>
 
 </head>
 
@@ -113,220 +23,37 @@ cursor:pointer;
 
 <canvas id="canvas"></canvas>
 
-<div id="ui">
+<div id="topUI">
+
+<div id="turn">
+현재 차례 : 플레이어 1
+</div>
+
+<div id="status">
 🙌 양손을 보여주세요
 </div>
 
+</div>
+
 <div id="warning">
-⚠ 위험해요!
+⚠ 위험해요! 친구에게 보내세요!
 </div>
 
 <div id="veg">
 🍅
 </div>
 
-<div id="boom">
-💥<br>
-채소가 터졌어요!<br><br>
+<div id="result" class="hidden">
 
-<button id="restart" onclick="location.reload()">
+<h1 id="resultTitle"></h1>
+
+<button onclick="location.reload()">
 다시하기
 </button>
+
 </div>
 
-<script>
-
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const veg = document.getElementById("veg");
-const ui = document.getElementById("ui");
-const boom = document.getElementById("boom");
-const warning = document.getElementById("warning");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let exploded = false;
-
-let startDistance = null;
-let maxGrowth = 0;
-
-function explode(){
-
-if(exploded) return;
-
-exploded = true;
-
-veg.style.display = "none";
-
-boom.style.display = "block";
-
-warning.style.display = "none";
-
-ui.innerText =
-"💥 채소가 터졌어요!";
-
-}
-
-const hands = new Hands({
-
-locateFile:(file)=>
-`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-
-});
-
-hands.setOptions({
-
-maxNumHands:2,
-modelComplexity:1,
-minDetectionConfidence:0.75,
-minTrackingConfidence:0.75
-
-});
-
-hands.onResults((results)=>{
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-if(exploded) return;
-
-if(
-results.multiHandLandmarks &&
-results.multiHandLandmarks.length===2
-){
-
-for(const landmarks of results.multiHandLandmarks){
-
-drawConnectors(
-ctx,
-landmarks,
-HAND_CONNECTIONS,
-{
-color:"#00FF00",
-lineWidth:4
-}
-);
-
-drawLandmarks(
-ctx,
-landmarks,
-{
-color:"#00FF00",
-lineWidth:2
-}
-);
-
-}
-
-const hand1 =
-results.multiHandLandmarks[0][9];
-
-const hand2 =
-results.multiHandLandmarks[1][9];
-
-const centerX =
-(hand1.x + hand2.x) / 2;
-
-const centerY =
-(hand1.y + hand2.y) / 2;
-
-veg.style.left =
-(centerX * window.innerWidth) + "px";
-
-veg.style.top =
-(centerY * window.innerHeight) + "px";
-
-const dx =
-hand1.x - hand2.x;
-
-const dy =
-hand1.y - hand2.y;
-
-const distance =
-Math.sqrt(dx*dx + dy*dy);
-
-if(startDistance===null){
-
-startDistance = distance;
-
-ui.innerText =
-"🌱 손을 벌려 채소를 키워보세요";
-
-return;
-
-}
-
-const growth =
-Math.max(
-0,
-distance - startDistance
-);
-
-if(growth > maxGrowth){
-
-maxGrowth = growth;
-
-const size =
-120 +
-(maxGrowth * 900);
-
-veg.style.fontSize =
-size + "px";
-
-ui.innerText =
-"🌱 채소 성장중!";
-
-if(size > 450){
-
-warning.style.display =
-"block";
-
-}
-
-if(size > 800){
-
-explode();
-
-}
-
-}
-
-}else{
-
-ui.innerText =
-"🙌 양손을 보여주세요";
-
-startDistance = null;
-
-}
-
-});
-
-const camera = new Camera(video,{
-
-onFrame:async()=>{
-
-await hands.send({
-image:video
-});
-
-},
-
-width:1280,
-height:720
-
-});
-
-camera.start();
-
-</script>
+<script src="game.js"></script>
 
 </body>
 </html>
