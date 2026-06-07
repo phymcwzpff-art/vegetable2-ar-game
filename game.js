@@ -2,18 +2,17 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
 const veg = document.getElementById("veg");
-const warning = document.getElementById("warning");
 const statusText = document.getElementById("status");
+const warning = document.getElementById("warning");
 
 const result = document.getElementById("result");
 const resultTitle = document.getElementById("resultTitle");
 
-let exploded = false;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
+let exploded = false;
 let size = 120;
 let startDistance = null;
 
@@ -99,20 +98,20 @@ veg.style.top =
 (centerY * window.innerHeight) + "px";
 
 const dx =
-h1.x - h2.x;
+h1.x-h2.x;
 
 const dy =
-h1.y - h2.y;
+h1.y-h2.y;
 
 const distance =
 Math.sqrt(dx*dx + dy*dy);
 
-if(startDistance === null){
+if(startDistance===null){
 
 startDistance = distance;
 
 statusText.innerText =
-"🌱 손을 벌려 채소를 키워보세요";
+"🌱 손을 벌려보세요";
 
 return;
 
@@ -121,10 +120,10 @@ return;
 const growth =
 Math.max(
 0,
-distance - startDistance
+distance-startDistance
 );
 
-size += growth * 20;
+size += growth * 15;
 
 if(size > 1800){
 size = 1800;
@@ -137,9 +136,6 @@ if(size > 700){
 
 warning.style.display =
 "block";
-
-warning.innerText =
-"⚠ 위험해요!";
 
 }
 
