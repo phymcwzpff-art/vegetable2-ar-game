@@ -12,8 +12,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <style>
-body{
+
+*{
 margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
 overflow:hidden;
 background:black;
 font-family:sans-serif;
@@ -29,26 +35,27 @@ object-fit:cover;
 transform:scaleX(-1);
 }
 
+#ui{
+position:fixed;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+background:rgba(0,0,0,0.5);
+color:white;
+padding:15px 25px;
+border-radius:20px;
+font-size:28px;
+z-index:100;
+}
+
 #veg{
 position:fixed;
 left:50%;
 top:50%;
 transform:translate(-50%,-50%);
 font-size:120px;
+z-index:50;
 transition:0.15s;
-}
-
-#ui{
-position:fixed;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-padding:12px 24px;
-background:rgba(0,0,0,.5);
-color:white;
-border-radius:12px;
-font-size:28px;
-z-index:100;
 }
 
 #boom{
@@ -60,6 +67,7 @@ font-size:180px;
 display:none;
 z-index:200;
 }
+
 </style>
 
 </head>
@@ -87,8 +95,10 @@ const veg = document.getElementById("veg");
 const ui = document.getElementById("ui");
 const boom = document.getElementById("boom");
 
-let biggestDistance = 0;
 let exploded = false;
+
+let startDistance = null;
+let maxGrowth = 0;
 
 function explode(){
 
@@ -97,46 +107,85 @@ if(exploded) return;
 exploded = true;
 
 veg.style.display = "none";
+
 boom.style.display = "block";
 
-ui.innerText = "💥 채소가 터졌어요!";
+ui.innerText =
+"💥 채소가 터졌어요!";
+
 }
 
 const hands = new Hands({
-locateFile:(file)=>
-`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+
+locateFile:(file)=>{
+
+return
+`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+
+}
+
 });
 
 hands.setOptions({
+
 maxNumHands:2,
+
 modelComplexity:1,
-minDetectionConfidence:0.7,
-minTrackingConfidence:0.7
+
+minDetectionConfidence:0.8,
+
+minTrackingConfidence:0.8
+
 });
 
 hands.onResults((results)=>{
 
+if(exploded) return;
+
 if(
 results.multiHandLandmarks &&
-results.multiHandLandmarks.length===2
+results.multiHandLandmarks.length === 2
 ){
 
-const h1 = results.multiHandLandmarks[0][9];
-const h2 = results.multiHandLandmarks[1][9];
+const hand1 =
+results.multiHandLandmarks[0][9];
 
-const dx = h1.x - h2.x;
-const dy = h1.y - h2.y;
+const hand2 =
+results.multiHandLandmarks[1][9];
+
+const dx =
+hand1.x - hand2.x;
+
+const dy =
+hand1.y - hand2.y;
 
 const distance =
 Math.sqrt(dx*dx + dy*dy);
 
-if(distance > biggestDistance){
+if(startDistance === null){
 
-biggestDistance = distance;
+startDistance = distance;
+
+ui.innerText =
+"🌱 시작! 손을 더 벌려보세요";
+
+return;
+
+}
+
+const growth =
+Math.max(
+0,
+distance - startDistance
+);
+
+if(growth > maxGrowth){
+
+maxGrowth = growth;
 
 const size =
 120 +
-(biggestDistance * 1200);
+(maxGrowth * 2000);
 
 veg.style.fontSize =
 size + "px";
@@ -144,7 +193,7 @@ size + "px";
 ui.innerText =
 "🌱 채소 성장중!";
 
-if(size > 600){
+if(size > 900){
 
 explode();
 
@@ -157,18 +206,25 @@ explode();
 ui.innerText =
 "🙌 양손을 보여주세요";
 
+startDistance = null;
+
 }
 
 });
 
 const camera = new Camera(video,{
+
 onFrame:async()=>{
+
 await hands.send({
 image:video
 });
+
 },
+
 width:1280,
 height:720
+
 });
 
 camera.start();
