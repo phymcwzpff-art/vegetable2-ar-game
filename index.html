@@ -5,9 +5,110 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>채소 키우기 - 손인식 버전</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const veg = document.getElementById("veg");
+const ui = document.getElementById("ui");
+const boom = document.getElementById("boom");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let exploded = false;
+let biggestDistance = 0;
+
+function explode(){
+
+if(exploded) return;
+
+exploded = true;
+
+veg.style.display = "none";
+boom.style.display = "block";
+
+ui.innerText = "💥 채소가 터졌어요!";
+}
+
+const hands = new Hands({
+locateFile: (file) => {
+return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+}
+});
+
+hands.setOptions({
+maxNumHands: 2,
+modelComplexity: 1,
+minDetectionConfidence: 0.7,
+minTrackingConfidence: 0.7
+});
+
+hands.onResults((results) => {
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+if(
+results.multiHandLandmarks &&
+results.multiHandLandmarks.length === 2
+){
+
+const hand1 = results.multiHandLandmarks[0][9];
+const hand2 = results.multiHandLandmarks[1][9];
+
+const dx = hand1.x - hand2.x;
+const dy = hand1.y - hand2.y;
+
+const distance = Math.sqrt(
+dx * dx +
+dy * dy
+);
+
+if(distance > biggestDistance){
+
+biggestDistance = distance;
+
+const size =
+120 +
+(biggestDistance * 1200);
+
+veg.style.fontSize =
+size + "px";
+
+ui.innerText =
+"🌱 채소 성장중!";
+
+if(size > 500){
+
+explode();
+
+}
+
+}
+
+}else{
+
+ui.innerText =
+"🙌 양손을 보여주세요";
+
+}
+
+});
+
+const camera = new Camera(video,{
+onFrame: async () => {
+await hands.send({
+image: video
+});
+},
+width:1280,
+height:720
+});
+
+camera.start();
+</script>
+
 
 <style>
 body{
